@@ -1,0 +1,747 @@
+import { useState, useRef, useEffect } from "react";
+const KEY = "sk-proj-Djnmyrcvdv7Qrd0GckAjTyvexQENOWuDn2jRXNPacQqb-SyBcG7y-eWVaUetFTeSX
+const C = {
+  sky:      "#B8D8D8",
+  skyMid:   "#7AACAC",
+  skyDark:  "#4A8A8A",
+  vanilla:  "#F2DDD0",
+  lilac:    "#CFC8D0",
+  lilacDark:"#9A90A0",
+  leek:     "#A8A86A",
+  leekDark: "#686848",
+dark:
+mid:
+soft:
+white:    "#FAFCFC",
+"#1E2A2A",
+"#3A5050",
+"#EEF4F4",
+};
+const STYLES=[{id:"casual",label:"Повседневный",sub:"Casual"},{id:"sport",label:"Спорт
+const SEASONS=[{id:"spring",label:"Весна",abbr:"SP"},{id:"summer",label:"Лето",abbr:"S
+const MARKETS=[{n:"Wildberries",c:"#8B1AAA",u:"https://www.wildberries.ru/catalog/0/se
+const TRENDS={
+  spring:{colors:["Vanilla Cream","Skylight","Gray Lilac","Leek Green"],pieces:["Широк
+  summer:{colors:["Skylight","Vanilla Cream","Leek Green","Cream White"],pieces:["Льня
+  autumn:{colors:["Leek Green","Gray Lilac","Vanilla Cream","Skylight"],pieces:["Кожан
+  winter:{colors:["Gray Lilac","Skylight","Vanilla Cream","Leek Green"],pieces:["Пальт
+};
+const GUIDE=[
+  {title:"Базовый гардероб",body:"Основа стильного гардероба -- универсальные вещи, ко
+  {title:"Правило цвета",body:"Современный стиль строится на балансе оттенков. Оптимал
+  {title:"Пропорции силуэта",body:"Гармоничный образ начинается с правильных пропорций
+  {title:"Качество важнее количества",body:"Современный гардероб строится на принципе
+];
+async function gpt(messages){
+  const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",head
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+function toB64(file){return new Promise((ok,err)=>{const fr=new FileReader();fr.onload
+const SF={fontFamily:"'Cormorant Garamond',Georgia,serif"};
+EwXJC5K
+ивный",
+U"},{id
+arch.as
+ие брюк
+ной сет
+ый трен
+о-кокон
+торые л
+ьная фо
+. Если
+разумно
+ers:{"C
+=()=>ok
+ const SS={fontFamily:"'DM Sans',sans-serif"};
+function Nav({title,onBack}){
+  return(
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",pad
+      <button onClick={onBack} style={{...SS,background:C.sky+"70",border:"none",color
+        <span style={{fontSize:18,lineHeight:1}}>&#8249;</span> Назад
+      </button>
+      <span style={{...SS,fontSize:10,fontWeight:600,letterSpacing:".26em",color:C.sky
+      <span style={{width:80}}/>
+</div> );
+}
+function Divider(){return <div style={{height:1,background:"linear-gradient(90deg,tran
+function Lbl({t}){return <div style={{...SS,fontSize:10,fontWeight:600,letterSpacing:"
+function PrimaryBtn({label,onClick,disabled}){
+  return(
+    <button onClick={onClick} disabled={disabled} style={{...SS,width:"100%",border:"n
+      <span>{label}</span>
+      <div style={{width:32,height:32,borderRadius:"50%",background:C.white+"20",displ
+    </button>
+); }
+function OutlineBtn({label,onClick}){
+  return(
+    <button onClick={onClick} style={{...SS,width:"100%",background:"transparent",bord
+      <span>{label}</span><span style={{fontSize:16}}>›</span>
+</button> );
+}
+function QuoteBox({label,text}){
+  return(
+    <div style={{background:"linear-gradient(135deg,"+C.sky+"35,"+C.vanilla+"50)",bord
+      {label&&<div style={{...SS,fontSize:9,fontWeight:700,letterSpacing:".24em",color
+      <div style={{...SF,fontSize:16,color:C.mid,lineHeight:1.85,fontStyle:"italic"}}>
+    </div>
+); }
+function ListRow({mark,text,color}){
+  return(
+    <div style={{display:"flex",gap:14,marginBottom:10,alignItems:"flex-start"}}>
+      <span style={{...SS,fontSize:13,fontWeight:700,color:color||C.skyDark,minWidth:2
+      <span style={{...SS,fontSize:14,color:C.mid,lineHeight:1.7}}>{text}</span>
+</div> );
+}
+ding:"2
+:C.dark
+Dark}}>
+sparent
+.24em",
+one",pa
+ay:"fle
+er:"1.5
+erRadiu
+:C.skyD
+{text}<
+0,paddi
+
+ const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamon
+export default function App(){
+  const [page,setPage]=useState("landing");
+  const [imgSrc,setImgSrc]=useState(null);
+  const [imgFile,setImgFile]=useState(null);
+  const [review,setReview]=useState(null);
+  const [style,setStyle]=useState(null);
+  const [season,setSeason]=useState(null);
+  const [outfits,setOutfits]=useState(null);
+  const [busyText,setBusyText]=useState("");
+  const [err,setErr]=useState(null);
+  const [tab,setTab]=useState(0);
+  const [open,setOpen]=useState(null);
+  const [mode,setMode]=useState("body");
+  const [trendSea,setTrendSea]=useState("autumn");
+  const [vis,setVis]=useState(false);
+  const [wardrobeItems,setWardrobeItems]=useState([]);
+  const ref=useRef();
+  const wardrobeRef=useRef();
+  useEffect(()=>{setTimeout(()=>setVis(true),100);},[]);
+  const go=p=>{setPage(p);setErr(null);setVis(false);setTimeout(()=>setVis(true),80);}
+  const pick=e=>{const f=e.target.files[0];if(!f)return;setImgFile(f);setImgSrc(URL.cr
+  const analyze=async()=>{
+    if(!imgFile)return;
+    setBusyText(mode==="item"?"Определяю вещь и собираю образ...":"Стилист анализирует
+    go("busy");
+    try{
+      const {b64,mime}=await toB64(imgFile);
+      let prompt;
+      if(mode==="item"){
+        prompt=`Ты премиальный персональный стилист. Пользователь загрузил фото одной
+Ответь ТОЛЬКО валидным JSON без markdown:
+{"mode":"item","itemName":"название вещи","stylistNote":"красивый совет 2-3 предложени
+      }else{
+        prompt=`Ты премиальный персональный стилист с 15-летним опытом.
+Посмотри на фото фигуры и сделай стилистический разбор.
+ПРАВИЛА ТОНА: никогда не говори "недостатки", "проблемная зона", "некрасивая". Говори
+Ответь ТОЛЬКО валидным JSON без markdown:
+{"impression":"общее впечатление 2-3 предложения языком дорогого стилиста","strengths"
+      }
+      const txt=await gpt([{role:"user",content:[{type:"image_url",image_url:{url:"dat
+      const data=JSON.parse(txt.replace(/```json\n?|```\n?/g,"").trim());
+      setReview(data);
+      if(data.mode==="item"){setOutfits(data);setTab(0);setOpen(null);go("outfits");}
+d:ital,
+; eateObj
+вашу ф
+вещи. О
+я","out
+тепло,
+:["крас
+a:"+mim
+
+       else go("review");
+    }catch(e){setErr(e.message);go("upload");}
+  const makeOutfits=async()=>{
+    if(!style||!season)return;
+    setBusyText("Подбираю образы с учётом вашей фигуры...");
+    go("busy");
+    try{
+      const t=TRENDS[season];
+      const sLabel=STYLES.find(s=>s.id===style).label;
+      const seaLabel=SEASONS.find(s=>s.id===season).label;
+      const prompt=`Ты премиальный персональный стилист.
+Клиент: ${review.impression}
+Сильные стороны: ${review.strengths.join(", ")}
+Рекомендуется: ${review.wear.join(", ")}
+Избегать: ${review.avoid.join(", ")}
+Составь 3 образа. Стиль: ${sLabel}. Сезон: ${seaLabel} 2026.
+Тренды: ${t.colors.join(", ")}. Вещи: ${t.pieces.join(", ")}.
+Ответь ТОЛЬКО валидным JSON без markdown:
+{"outfits":[{"name":"название образа","mood":"настроение","description":"описание обра
+      const txt=await gpt([{role:"user",content:prompt}]);
+      const data=JSON.parse(txt.replace(/```json\n?|```\n?/g,"").trim());
+      setOutfits(data);setTab(0);setOpen(null);go("outfits");
+    }catch(e){setErr(e.message);go("picker");}
+  };
+  const BG={background:C.soft,minHeight:"100vh"};
+  const W={maxWidth:480,margin:"0 auto",padding:"0 24px 90px"};
+  const anim={opacity:vis?1:0,transform:vis?"none":"translateY(16px)",transition:"all
+  /* ═══ BUSY ═══ */
+  if(page==="busy")return(
+    <div style={{...BG,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <style>{FONTS}</style>
+      <div style={{textAlign:"center",padding:48}}>
+        <div style={{width:64,height:64,border:"2px solid "+C.sky,borderTop:"2px solid
+        <div style={{...SF,fontSize:24,color:C.dark,marginBottom:10,fontWeight:300}}>{
+        <div style={{...SS,fontSize:13,color:C.skyMid}}>Подождите 15-20 секунд</div>
+      </div>
+    </div>
+);
+  /* ═══ LANDING ═══ */
+  if(page==="landing")return(
+    <div style={{background:C.soft,minHeight:"100vh",position:"relative",overflow:"hid
+      <style>{FONTS}</style>
+};
+за","it
+.6s cub
+ "+C.sk
+busyTex
+den"}}>
+
+ <div style={{position:"fixed",top:-120,right:-120,width:380,height:380,borderRad
+<div style={{position:"fixed",top:220,left:-80,width:240,height:240,borderRadius
+<div style={{position:"fixed",bottom:-80,right:20,width:260,height:260,borderRad
+<div style={W}>
+  {/* Hero */}
+  <div style={{paddingTop:80,paddingBottom:36,animation:"fadeUp .9s ease both"}}
+    <div style={{marginBottom:28}}>
+      <span style={{...SS,fontSize:12,letterSpacing:".18em",color:C.skyMid,fontW
+    </div>
+    <div style={{...SF,fontSize:64,color:C.dark,lineHeight:.9,fontWeight:300,mar
+    <div style={{...SS,fontSize:14,color:C.skyMid,letterSpacing:".18em",fontWeig
+    <div style={{...SS,fontSize:15,color:C.mid,lineHeight:1.85,fontWeight:300,ma
+      Создавай стильные образы за секунды с помощью профессиональных стилистов
+    </div>
+</div>
+  {/* Фичи без номеров */}
+  <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:36}}>
+{[
+{t:"Анализ фигуры",
+{t:"Трендовые образы",
+{t:"Образ под вещь",
+{t:"Быстрый поиск вещей", d:"Быстрый поиск вещей на маркетплейсах WB · Ozo
+{t:"Тренды сезона",       d:"Актуальные луки и цвета от профессиональных с
+d:"Персональный разбор от стилиста -- сильные ст
+d:"Трендовые образы сформированные под вашу фигу
+d:"Покажи вещь -- стилист соберёт вокруг неё три
+  ].map((f,i)=>(
+    <div key={i} style={{background:f.bg,borderRadius:20,padding:"16px 18px",d
+      <div style={{width:38,height:38,borderRadius:14,background:C.white+"90",
+      <div>
+        <div style={{...SF,fontSize:19,color:C.dark,marginBottom:3,fontWeight:
+        <div style={{...SS,fontSize:12,color:C.mid,lineHeight:1.6,fontWeight:3
+      </div>
+</div> ))}
+</div>
+{/* CTA */}
+<div style={{animation:"fadeUp .9s .62s ease both",opacity:0,animationFillMode
+  {/* Бейдж бесплатно/генерации */}
+  <div style={{display:"flex",background:C.sky+"40",borderRadius:50,overflow:"
+    <div style={{flex:1,background:C.white+"80",padding:"12px 0",textAlign:"ce
+      <div style={{...SS,fontSize:10,fontWeight:700,letterSpacing:".18em",colo
+    </div>
+    <div style={{flex:1,padding:"12px 0",textAlign:"center"}}>
+      <div style={{...SS,fontSize:10,fontWeight:700,letterSpacing:".18em",colo
+    </div>
+</div>
+ius:"50
+:"50%",
+ius:"50
+>
+eight:3
+ginBott
+ht:300,
+xWidth:
+ороны,
+ру и ст
+ готовы
+n · Lam
+тилисто
+isplay:
+display
+400}}>{
+00}}>{f
+:"forwa
+hidden"
+nter",b
+r:C.sky
+r:C.dar
+
+         {/* Главная кнопка */}
+        <button onClick={()=>go("home")} style={{...SS,width:"100%",background:"line
+          <span style={{...SF,fontSize:26,fontWeight:400,fontStyle:"italic"}}>Начать
+          <div style={{width:42,height:42,borderRadius:"50%",background:C.white+"22"
+        </button>
+      </div>
+    </div>
+</div> );
+/* ═══ HOME ═══ */
+if(page==="home")return(
+  <div style={BG}>
+    <div style={{...W,...anim}}>
+      <div style={{paddingTop:36,display:"flex",justifyContent:"space-between",align
+        <div>
+          <div style={{...SF,fontSize:28,color:C.dark,lineHeight:1,fontWeight:400}}>
+          <div style={{...SS,fontSize:12,color:C.skyMid,letterSpacing:".1em",marginT
+        </div>
+        <div style={{...SS,fontSize:10,fontWeight:700,letterSpacing:".14em",backgrou
+      </div>
+      <div style={{...SS,fontSize:10,color:C.skyDark,letterSpacing:".2em",marginBott
+      <div style={{...SF,fontSize:38,color:C.dark,lineHeight:1.05,marginBottom:18,fo
+      <Divider/>
+      {/* Главная карточка */}
+      <div onClick={()=>{setMode("body");setImgSrc(null);setImgFile(null);go("upload
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"cente
+          <div style={{...SS,fontSize:10,color:C.white+"55",letterSpacing:".18em",fo
+          <div style={{...SS,fontSize:9,fontWeight:700,letterSpacing:".16em",backgro
+        </div>
+        <div style={{...SF,fontSize:36,color:C.white,lineHeight:1,marginBottom:10,fo
+        <div style={{...SS,fontSize:13,color:C.sky,lineHeight:1.65,marginBottom:18,f
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"cente
+          <div style={{...SS,fontSize:12,color:C.white,letterSpacing:".06em"}}>Начат
+          <div style={{width:36,height:36,borderRadius:"50%",background:C.white+"18"
+        </div>
+        <div style={{position:"absolute",bottom:-50,right:-50,width:180,height:180,b
+      </div>
+      {/* Две карточки */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:
+        <div onClick={()=>{setMode("item");setImgSrc(null);setImgFile(null);go("uplo
+          <div style={{...SF,fontSize:17,color:C.dark,marginBottom:5,lineHeight:1.2,
+          <div style={{...SS,fontSize:11,color:C.mid,lineHeight:1.45,fontWeight:300}
+          <div style={{position:"absolute",bottom:14,right:14,width:28,height:28,bor
+</div>
+ar-grad
+</span>
+,displa
+Items:"
+Style C
+op:3,fo
+nd:C.sk
+om:6,fo
+ntWeigh
+");}} s
+r",marg
+ntWeigh
+und:C.s
+ntWeigh
+ontWeig
+r"}}>
+ь анали
+,displa
+orderRa
+14}}>
+ad");}}
+fontWei
+}>Фото
+derRadi
+
+         <div onClick={()=>go("guide")} style={{background:"linear-gradient(135deg,"+
+          <div style={{...SF,fontSize:17,color:C.dark,marginBottom:5,lineHeight:1.2,
+          <div style={{...SS,fontSize:11,color:C.mid,lineHeight:1.45,fontWeight:300}
+          <div style={{position:"absolute",bottom:14,right:14,width:28,height:28,bor
+        </div>
+      </div>
+      {/* Мои вещи -- отдельная карточка */}
+      <div onClick={()=>go("wardrobe")} style={{background:"linear-gradient(135deg,"
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"cente
+          <div>
+            <div style={{...SF,fontSize:20,color:C.dark,marginBottom:4,fontWeight:40
+            <div style={{...SS,fontSize:12,color:C.mid,fontWeight:300}}>Собери образ
+          </div>
+          <div style={{width:36,height:36,borderRadius:"50%",background:C.leekDark,d
+        </div>
+</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        {[["Тренды сезона","trends",C.vanilla+"80",C.skyMid],["История","history",C.
+          <div key={p} onClick={()=>go(p)} style={{background:bg,border:"1px solid "
+            <div style={{width:8,height:8,borderRadius:"50%",background:ac,flexShrin
+            <div style={{...SS,fontSize:13,color:C.mid,fontWeight:400}}>{t}</div>
+          </div>
+))} </div>
+    </div>
+  </div>
+);
+/* ═══ UPLOAD ═══ */
+if(page==="upload")return(
+  <div style={BG}>
+    <div style={{...W,...anim}}>
+      <Nav title={mode==="item"?"ОБРАЗ ПОД ВЕЩЬ":"АНАЛИЗ ФИГУРЫ"} onBack={()=>go("ho
+      {err&&<div style={{...SS,background:"#ffeaea",color:"#a04040",padding:"13px 18
+      <div style={{...SF,fontSize:30,color:C.dark,marginBottom:20,fontWeight:300,lin
+      {mode==="body"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom
+          {[["Полный рост",C.sky+"65"],["Светлый фон",C.vanilla+"85"],["Облегающая о
+            <div key={i} style={{background:bg,padding:"12px 14px",borderRadius:14}}
+              <div style={{...SS,fontSize:13,color:C.dark,fontWeight:400}}>{t}</div>
+</div> ))}
+</div> )}
+      <div onClick={()=>ref.current.click()} style={{background:C.white,border:"1.5p
+C.lilac
+fontWei
+}>Совет
+derRadi
++C.leek
+r"}}>
+0}}>Мои
+ из сво
+isplay:
+sky+"40
++ac+"30
+k:0}}/>
+me")}/>
+px",fon
+eHeight
+:20}}>
+дежда",
+>
+x dashe
+
+         {imgSrc
+          ?<img src={imgSrc} style={{width:"100%",maxHeight:380,objectFit:"cover"}}/
+          :<div style={{textAlign:"center",padding:40}}>
+            <div style={{width:64,height:64,borderRadius:"50%",background:C.sky+"70"
+            <div style={{...SS,fontSize:13,color:C.skyMid,letterSpacing:".06em",font
+          </div>
+} </div>
+      <input ref={ref} type="file" accept="image/*" style={{display:"none"}} onChang
+      {imgSrc&&<PrimaryBtn label="Анализировать" onClick={analyze}/>}
+      <OutlineBtn label={imgSrc?"Выбрать другое фото":"Открыть галерею"} onClick={()
+    </div>
+  </div>
+);
+/* ═══ REVIEW ═══ */
+if(page==="review"&&review)return(
+  <div style={BG}>
+    <div style={{...W,...anim}}>
+      <Nav title="СТИЛИСТИЧЕСКИЙ РАЗБОР" onBack={()=>go("upload")}/>
+      <div style={{marginBottom:26}}>
+        <div style={{...SS,fontSize:10,fontWeight:600,letterSpacing:".28em",color:C.
+        <div style={{...SF,fontSize:46,color:C.dark,lineHeight:.95,fontWeight:300}}>
+        <div style={{width:48,height:3,background:"linear-gradient(90deg,"+C.skyDark
+      </div>
+      <QuoteBox label="ОБЩЕЕ ВПЕЧАТЛЕНИЕ" text={review.impression}/>
+      <div style={{marginBottom:20}}>
+        <Lbl t="ЧТО В ТЕБЕ ОСОБЕННО КРАСИВО"/>
+{review.strengths&&review.strengths.map((x,i)=><ListRow key={i} mark="✦" tex </div>
+      <QuoteBox label="СЛОВО СТИЛИСТА" text={review.advice}/>
+      {review.corrections&&review.corrections.length>0&&(
+        <div style={{marginBottom:20}}>
+          <Lbl t="ЧТО СТОИТ СКОРРЕКТИРОВАТЬ СТИЛЕМ"/>
+          {review.corrections.map((x,i)=><ListRow key={i} mark="→" text={x} color={C
+</div> )}
+      <div style={{marginBottom:20}}>
+        <Lbl t="ЧТО ТЕБЕ ПОДОЙДЁТ"/>
+        {review.wear&&review.wear.map((x,i)=><ListRow key={i} mark="+" text={x} colo
+      </div>
+      <div style={{marginBottom:20}}>
+        <Lbl t="ЧТО ЛУЧШЕ НЕ ВЫБИРАТЬ"/>
+        {review.avoid&&review.avoid.map((x,i)=><ListRow key={i} mark="−" text={x} co
+      </div>
+      {review.colors&&(
+        <div style={{marginBottom:20}}>
+>
+,displa
+Weight:
+e={pick
+=>ref.c
+skyDark
+Style<b
++","+C.
+t={x} c
+.lilacD
+r={C.le
+lor="#9
+
+           <Lbl t="ЦВЕТ И СОЧЕТАНИЯ"/>
+          <div style={{...SS,fontSize:14,color:C.mid,lineHeight:1.8,fontWeight:300}}
+        </div>
+      )}
+      <Divider/>
+      <PrimaryBtn label="Подобрать мои образы" onClick={()=>go("picker")}/>
+    </div>
+  </div>
+);
+/* ═══ PICKER ═══ */
+if(page==="picker")return(
+  <div style={BG}>
+    <div style={{...W,...anim}}>
+      <Nav title="СТИЛЬ · СЕЗОН" onBack={()=>go("review")}/>
+      {review&&<div style={{...SF,fontSize:14,color:C.mid,lineHeight:1.75,padding:"1
+      <Lbl t="ВЫБЕРИ СТИЛЬ"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:
+        {STYLES.map(st=>(
+          <div key={st.id} onClick={()=>setStyle(st.id)} style={{background:style===
+            <div style={{...SF,fontSize:19,color:style===st.id?C.dark:C.mid,marginBo
+            <div style={{...SS,fontSize:11,color:C.skyMid,fontWeight:300}}>{st.sub}<
+          </div>
+))} </div>
+      <Lbl t="ВЫБЕРИ СЕЗОН"/>
+      <div style={{display:"flex",gap:8,marginBottom:24}}>
+        {SEASONS.map(se=>(
+          <div key={se.id} onClick={()=>setSeason(se.id)} style={{flex:1,padding:"13
+            <div style={{...SF,fontSize:16,color:season===se.id?C.white:C.mid,fontWe
+            <div style={{...SS,fontSize:9,color:season===se.id?C.white+"cc":C.skyMid
+          </div>
+))} </div>
+      {season&&(
+        <div style={{background:"linear-gradient(135deg,"+C.sky+"30,"+C.vanilla+"35)
+          <div style={{...SS,fontSize:9,fontWeight:700,letterSpacing:".22em",color:C
+          <div style={{...SS,fontSize:13,color:C.mid,fontWeight:300}}>{TRENDS[season
+        </div>
+)}
+      <PrimaryBtn label="Создать образы" onClick={makeOutfits} disabled={!style||!se
+    </div>
+</div> );
+/* ═══ OUTFITS ═══ */
+if(page==="outfits"&&outfits){
+>{revie
+6px 18p
+24}}>
+st.id?"
+ttom:3,
+/div>
+px 6px"
+ight:30
+,margin
+",borde
+.skyDar
+].color
+ason}/>
+
+ const list=outfits.outfits||[];
+const o=list[tab];
+return(
+  <div style={BG}>
+    <div style={{...W,...anim}}>
+      <Nav title="ТВОИ ОБРАЗЫ" onBack={()=>mode==="item"?go("upload"):go("picker")
+      <div style={{display:"flex",gap:8,marginBottom:20}}>
+        {list.map((oo,i)=>(
+          <div key={i} onClick={()=>{setTab(i);setOpen(null);}} style={{flex:1,pad
+            <div style={{...SS,fontSize:9,color:tab===i?C.skyDark:C.skyMid,letterS
+            <div style={{...SF,fontSize:26,color:tab===i?C.dark:C.mid,lineHeight:1
+            <div style={{...SS,fontSize:10,color:tab===i?C.mid:C.skyMid,marginTop:
+</div> ))}
+</div> {o&&(
+        <div style={{background:C.white,border:"1px solid "+C.sky+"50",overflow:"h
+          <div style={{padding:"22px 22px 16px",background:"linear-gradient(135deg
+            <div style={{...SF,fontSize:24,color:C.dark,marginBottom:8,fontWeight:
+            <div style={{...SS,fontSize:13,color:C.mid,lineHeight:1.7,fontWeight:3
+          </div>
+          <Divider/>
+          <div style={{...SS,fontSize:11,color:C.skyMid,letterSpacing:".04em",padd
+          {o.items&&o.items.map((item,i)=>(
+            <div key={i}>
+              <div onClick={()=>setOpen(open===i?null:i)} style={{display:"flex",a
+                <div style={{flex:1}}>
+                  <div style={{...SS,fontSize:9,fontWeight:700,letterSpacing:".16e
+                  <div style={{...SS,fontSize:15,fontWeight:500,color:C.dark,margi
+                  <div style={{...SS,fontSize:12,color:C.mid,fontWeight:300}}>{ite
+</div>
+                <div style={{width:30,height:30,borderRadius:"50%",background:open
+              </div>
+              {open===i&&(
+                <div style={{background:"linear-gradient(135deg,"+C.sky+"25,"+C.va
+                  {item.why&&<div style={{...SF,fontSize:15,color:C.mid,lineHeight
+                  <div style={{...SS,fontSize:9,fontWeight:700,letterSpacing:".22e
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {MARKETS.map((m,mi)=>(
+                      <button key={mi} onClick={()=>window.open(m.u+encodeURICompo
+))} </div>
+</div> )}
+</div> ))}
+</div>
+}/>
+ding:"1
+pacing:
+,fontWe
+2,fontW
+idden",
+,"+C.wh
+400,lin
+00}}>{o
+ing:"0
+lignIte
+m",colo
+nBottom
+m.detai
+===i?C.
+nilla+"
+:1.8,ma
+m",colo
+nent(it
+
+ )}
+        <PrimaryBtn label="Новый разбор" onClick={()=>{setImgSrc(null);setImgFile(nu
+      </div>
+</div> );
+}
+/* ═══ GUIDE ═══ */
+if(page==="guide")return(
+  <div style={BG}>
+    <div style={{...W,...anim}}>
+      <Nav title="ГИД ПО СТИЛЮ" onBack={()=>go("home")}/>
+      <div style={{...SF,fontSize:44,color:C.dark,lineHeight:.98,marginBottom:4,font
+      <div style={{width:44,height:3,background:"linear-gradient(90deg,"+C.skyDark+"
+      {GUIDE.map((g,i)=>(
+        <div key={i} style={{borderBottom:"1px solid "+C.sky+"50",paddingBottom:24,m
+          <div style={{...SF,fontSize:22,color:C.dark,fontWeight:400,marginBottom:12
+          <div style={{...SS,fontSize:14,color:C.mid,lineHeight:1.85,fontWeight:300}
+</div> ))}
+      <div style={{...SS,fontSize:10,fontWeight:700,letterSpacing:".22em",color:C.sk
+      <div style={{display:"flex",gap:8}}>
+        {[["#B8D8D8","Skylight"],["#F2DDD0","Vanilla"],["#CFC8D0","Lilac"],["#A8A86A
+          <div key={hex} style={{flex:1,textAlign:"center"}}>
+            <div style={{height:48,background:hex,borderRadius:12,marginBottom:7,bor
+            <div style={{...SS,fontSize:10,color:C.mid,fontWeight:400,marginBottom:2
+          </div>
+))} </div>
+    </div>
+  </div>
+);
+/* ═══ TRENDS ═══ */
+if(page==="trends"){
+  const t=TRENDS[trendSea];
+  const sl=SEASONS.find(s=>s.id===trendSea);
+  return(
+    <div style={BG}>
+      <div style={{...W,...anim}}>
+        <Nav title="ТРЕНДЫ · 2026" onBack={()=>go("home")}/>
+        <div style={{display:"flex",gap:8,marginBottom:24}}>
+          {SEASONS.map(se=>(
+            <div key={se.id} onClick={()=>setTrendSea(se.id)} style={{flex:1,padding
+              <div style={{...SF,fontSize:15,color:trendSea===se.id?C.white:C.mid,fo
+              <div style={{...SS,fontSize:9,color:trendSea===se.id?C.white+"cc":C.sk
+            </div>
+ll);set
+Weight:
+,"+C.le
+arginBo
+}}>{g.t
+}>{g.bo
+yDark,m
+","Leek
+der:"1p
+}}>{nam
+:"12px
+ntWeigh
+yMid,ma
+
+ ))} </div>
+        <div style={{borderLeft:"3px solid "+C.skyDark,paddingLeft:18,marginBottom:2
+          <div style={{...SS,fontSize:9,fontWeight:700,letterSpacing:".26em",color:C
+          <div style={{...SF,fontSize:30,color:C.dark,fontWeight:300}}>Актуальные тр
+        </div>
+        {[{title:"ЦВЕТА СЕЗОНА",items:t.colors,type:"chip"},{title:"КЛЮЧЕВЫЕ ВЕЩИ",i
+          <div key={sec.title} style={{borderBottom:"1px solid "+C.sky+"40",paddingB
+            <div style={{...SS,fontSize:10,fontWeight:700,letterSpacing:".22em",colo
+            {sec.type==="list"
+              ?sec.items.map((x,i)=>(
+                <div key={i} style={{display:"flex",gap:16,marginBottom:10,alignItem
+                  <div style={{width:6,height:6,borderRadius:"50%",background:C.skyD
+                  <span style={{...SS,fontSize:14,color:C.mid,lineHeight:1.55,fontWe
+                </div>
+              ))
+              :<div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {sec.items.map((x,i)=><span key={i} style={{...SS,border:"1px solid
+              </div>
+} </div>
+))} </div>
+</div> );
+}
+/* ═══ HISTORY ═══ */
+if(page==="history")return(
+  <div style={BG}>
+    <div style={{...W,...anim}}>
+      <Nav title="ИСТОРИЯ" onBack={()=>go("home")}/>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justify
+        <div style={{width:64,height:64,borderRadius:"50%",background:C.sky+"50",dis
+        <div style={{...SF,fontSize:28,color:C.dark,fontWeight:300}}>История пуста</
+        <div style={{...SS,fontSize:13,color:C.skyMid,letterSpacing:".04em",fontWeig
+      </div>
+    </div>
+</div> );
+/* ═══ WARDROBE ═══ */
+if(page==="wardrobe")return(
+  <div style={{...BG,...anim}}>
+    <div style={W}>
+      <Nav title="МОИ ВЕЩИ" onBack={()=>go("home")}/>
+      <div style={{...SF,fontSize:30,color:C.dark,marginBottom:4,fontWeight:300}}>Мо
+8,borde
+.skyDar
+енды</d
+tems:t.
+ottom:2
+r:C.sky
+s:"cent
+ark,fle
+ight:30
+"+C.sky
+Content
+play:"f
+div>
+ht:300}
+й гарде
+
+ <div style={{...SS,fontSize:13,color:C.skyMid,marginBottom:24,fontWeight:300}}
+{wardrobeItems.length===0?(
+  <div style={{background:C.white,border:"1.5px dashed "+C.skyMid,minHeight:20
+    <div style={{width:56,height:56,borderRadius:"50%",background:C.sky+"60",d
+    <div style={{...SS,fontSize:13,color:C.skyMid,fontWeight:300}}>Здесь появя
+    <div style={{...SS,fontSize:11,color:C.sky,marginTop:4,fontWeight:300}}>На
+</div> ):(
+  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginB
+    {wardrobeItems.map((it,i)=>(
+      <div key={i} style={{borderRadius:16,overflow:"hidden",border:"1px solid
+        <img src={it.url} style={{width:"100%",height:110,objectFit:"cover"}}/
+        <div style={{...SS,fontSize:10,color:C.mid,padding:"6px 8px",textAlign
+</div> ))}
+    <div onClick={()=>wardrobeRef.current.click()} style={{borderRadius:16,bor
+      <div style={{fontSize:22,color:C.skyDark}}>+</div>
+      <div style={{...SS,fontSize:10,color:C.skyMid,marginTop:4}}>Добавить</di
+    </div>
+  </div>
+)}
+<input ref={wardrobeRef} type="file" accept="image/*" style={{display:"none"}}
+  const f=e.target.files[0];
+  if(!f)return;
+  const url=URL.createObjectURL(f);
+  setWardrobeItems(prev=>[...prev,{url,name:"Вещь "+(prev.length+1)}]);
+}}/>
+<OutlineBtn label="Добавить вещь" onClick={()=>wardrobeRef.current.click()}/>
+<PrimaryBtn label="Собрать образ из моих вещей" onClick={()=>{
+  if(wardrobeItems.length<2){
+    setErr("Добавь минимум 2 вещи чтобы собрать образ");
+return; }
+  setBusyText("Стилист подбирает образ из ваших вещей...");
+  go("busy");
+  setTimeout(()=>{
+    setErr("Функция будет доступна после подключения AI -- скоро!");
+    go("wardrobe");
+  },2000);
+}}/>
+{wardrobeItems.length<2&&(
+  <div style={{...SS,fontSize:12,color:C.skyMid,textAlign:"center",marginTop:1
+>Добавь
+0,displ
+isplay:
+тся тво
+жми кно
+ottom:1
+"+C.sk >
+:"cente
+der:"1. v>
+onChan
+0,fontW
+
+ 
